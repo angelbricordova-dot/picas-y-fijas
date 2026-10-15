@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="felt" cx="50%" cy="20%" r="85%">
+      <stop offset="0" stop-color="#2f8a5e"/>
+      <stop offset=".55" stop-color="#16653f"/>
+      <stop offset="1" stop-color="#0d4a2f"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#felt)"/>
+  <g transform="rotate(-12 256 262)">
+    <ellipse cx="262" cy="452" rx="150" ry="22" fill="#062a1a" opacity=".45"/>
+    <rect x="146" y="92" width="232" height="350" rx="54" fill="#b19d78"/>
+    <rect x="146" y="72" width="232" height="350" rx="54" fill="#f8f1e2"/>
+    <path d="M182 247 H342" stroke="#ddcfb2" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="262" cy="247" r="13" fill="#e1b85a"/>
+    <circle cx="208" cy="128" r="27" fill="#d9412b"/>
+    <circle cx="316" cy="128" r="27" fill="#d9412b"/>
+    <circle cx="262" cy="160" r="27" fill="#d9412b"/>
+    <circle cx="208" cy="192" r="27" fill="#d9412b"/>
+    <circle cx="316" cy="192" r="27" fill="#d9412b"/>
+    <circle cx="208" cy="310" r="22" fill="none" stroke="#2b241d" stroke-width="15"/>
+    <circle cx="316" cy="370" r="22" fill="none" stroke="#2b241d" stroke-width="15"/>
+  </g>
+</svg>

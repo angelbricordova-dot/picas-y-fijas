@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-15T06:00:00Z",
+  "title": "Design System: Picas y Fijas",
+  "extensions": {
+    "colorMeta": {
+      "felt": { "role": "primary", "displayName": "Paño", "canonical": "oklch(0.44 0.095 157)", "tonalRamp": ["oklch(0.52 0.1 155)", "oklch(0.44 0.095 157)", "oklch(0.355 0.08 159)", "oklch(0.285 0.066 161)"] },
+      "bone": { "role": "neutral", "displayName": "Hueso", "canonical": "oklch(0.965 0.022 88)", "tonalRamp": ["oklch(0.965 0.022 88)", "oklch(0.915 0.032 84)", "oklch(0.82 0.042 80)", "oklch(0.67 0.05 74)"] },
+      "fija": { "role": "secondary", "displayName": "Fija", "canonical": "oklch(0.6 0.205 29)" },
+      "pin": { "role": "tertiary", "displayName": "Pin de bronce", "canonical": "oklch(0.8 0.125 82)" },
+      "ink": { "role": "neutral", "displayName": "Tinta", "canonical": "oklch(0.23 0.02 60)" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Bagel Fat One", "purpose": "Titles, wordmark, every numeral on a tile or key." },
+      "body": { "displayName": "Onest", "purpose": "All interface text." }
+    },
+    "shadows": [
+      { "name": "tile-thickness", "value": "0 4px 0 var(--bone-shade), 0 10px 18px -8px var(--shadow)", "purpose": "Raised bone tiles: the side of the tile plus one soft shadow." },
+      { "name": "tile-pressed", "value": "0 1px 0 var(--bone-shade), 0 4px 8px -6px var(--shadow)", "purpose": "Pressed state; face moves down by the thickness." },
+      { "name": "well", "value": "inset 0 2px 6px oklch(0.1 0.03 160 / 0.45)", "purpose": "Inputs, empty slots, switch tracks." }
+    ],
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(0.23, 1, 0.32, 1)", "purpose": "Default for UI entering and state changes." },
+      { "name": "ease-spring", "value": "cubic-bezier(0.34, 1.56, 0.64, 1)", "purpose": "Only the result domino, pips, characters and win title: the playful landing." },
+      { "name": "ease-drawer", "value": "cubic-bezier(0.32, 0.72, 0, 1)", "purpose": "Bottom sheets." }
+    ],
+    "breakpoints": [{ "name": "short", "value": "max-height: 760px" }]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Bone tile that sinks when pressed. One per screen.",
+      "html": "<button class=\"ds-btn\">Crear sala</button>",
+      "css": ".ds-btn { width: 100%; height: 58px; border: 0; border-radius: 16px; background: oklch(0.965 0.022 88); color: oklch(0.23 0.02 60); font: 700 18px 'Onest Variable', system-ui, sans-serif; box-shadow: 0 4px 0 oklch(0.67 0.05 74), 0 10px 18px -8px oklch(0.14 0.04 160 / 0.5); transition: transform 110ms cubic-bezier(0.23,1,0.32,1), box-shadow 110ms cubic-bezier(0.23,1,0.32,1); cursor: pointer; } .ds-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 oklch(0.67 0.05 74); } .ds-btn:focus-visible { outline: 3px solid oklch(0.8 0.125 82); outline-offset: 2px; }"
+    },
+    {
+      "name": "Digit Key",
+      "kind": "custom",
+      "refersTo": "key-digit",
+      "description": "Keypad key in Bagel numerals.",
+      "html": "<button class=\"ds-key\">7</button>",
+      "css": ".ds-key { width: 110px; height: 54px; border: 0; border-radius: 14px; background: oklch(0.965 0.022 88); color: oklch(0.23 0.02 60); font: 400 26px 'Bagel Fat One', system-ui; box-shadow: 0 4px 0 oklch(0.67 0.05 74); transition: transform 90ms cubic-bezier(0.23,1,0.32,1), box-shadow 90ms; } .ds-key:active { transform: translateY(3px); box-shadow: 0 1px 0 oklch(0.67 0.05 74); }"
+    },
+    {
+      "name": "Submit Key",
+      "kind": "button",
+      "refersTo": "key-submit",
+      "description": "Ink tile that sends the guess.",
+      "html": "<button class=\"ds-submit\">Probar</button>",
+      "css": ".ds-submit { width: 100%; height: 54px; border: 0; border-radius: 14px; background: oklch(0.23 0.02 60); color: oklch(0.965 0.022 88); font: 400 22px 'Bagel Fat One', system-ui; box-shadow: 0 4px 0 oklch(0.13 0.015 60); } .ds-submit:active { transform: translateY(3px); box-shadow: 0 1px 0 oklch(0.13 0.015 60); }"
+    },
+    {
+      "name": "Code Input Well",
+      "kind": "input",
+      "refersTo": "input-well",
+      "description": "Room code entry sunk into the felt.",
+      "html": "<input class=\"ds-well\" placeholder=\"ABCD\" />",
+      "css": ".ds-well { height: 56px; width: 220px; border: 0; border-radius: 14px; background: oklch(0.285 0.066 161); color: oklch(0.975 0.018 95); font: 400 28px 'Bagel Fat One', system-ui; letter-spacing: 0.32em; text-align: center; box-shadow: inset 0 2px 6px oklch(0.1 0.03 160 / 0.45); } .ds-well:focus { outline: none; box-shadow: inset 0 2px 6px oklch(0.1 0.03 160 / 0.45), inset 0 0 0 2px oklch(0.97 0.02 90 / 0.55); }"
+    },
+    {
+      "name": "Result Domino",
+      "kind": "custom",
+      "refersTo": "guess-row",
+      "description": "Signature: fijas left as red pips, picas right as ink rings.",
+      "html": "<svg class=\"ds-domino\" viewBox=\"0 0 208 110\" width=\"96\"><rect x=\"1\" y=\"7\" width=\"206\" height=\"102\" rx=\"20\" fill=\"oklch(0.67 0.05 74)\"/><rect x=\"1\" y=\"1\" width=\"206\" height=\"102\" rx=\"20\" fill=\"oklch(0.965 0.022 88)\"/><path d=\"M104 16 V88\" stroke=\"oklch(0.82 0.042 80)\" stroke-width=\"4\"/><circle cx=\"104\" cy=\"52\" r=\"5.5\" fill=\"oklch(0.8 0.125 82)\"/><circle cx=\"27\" cy=\"27\" r=\"10.5\" fill=\"oklch(0.6 0.205 29)\"/><circle cx=\"52\" cy=\"52\" r=\"10.5\" fill=\"oklch(0.6 0.205 29)\"/><circle cx=\"77\" cy=\"77\" r=\"10.5\" fill=\"oklch(0.6 0.205 29)\"/><circle cx=\"156\" cy=\"52\" r=\"8.6\" fill=\"none\" stroke=\"oklch(0.23 0.02 60)\" stroke-width=\"4.6\"/></svg>",
+      "css": ".ds-domino { display: block; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "La mesa de dominó",
+    "overview": "Green felt owns the shell; everything touchable is a raised bone tile that sinks when pressed. Every guess is answered with a domino: fijas as red pips on the left, picas as ink rings on the right.",
+    "keyCharacteristics": ["Lamp-lit felt ground", "Bone tiles with real thickness", "Result dominoes 0–6 pips", "Domino-tile characters"],
+    "rules": [
+      { "name": "Red means fija", "body": "Red is reserved for fijas, alerts and destructive actions.", "section": "colors" },
+      { "name": "Shape before color", "body": "Fija is a solid dot, pica a ring, nada a dimmed tile.", "section": "colors" },
+      { "name": "Thickness, not float", "body": "Depth is the tile's side directly below plus one soft shadow; no glass.", "section": "elevation" }
+    ],
+    "dos": ["Answer every guess with the domino", "Keep bone for touchables and felt for ground", "Spend motion on the result moment"],
+    "donts": ["No red outside fija/alert/destructive", "No light theme, glass, gradient text or grain", "Never color-only result encoding"]
+  }
+}

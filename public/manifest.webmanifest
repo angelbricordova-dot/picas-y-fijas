@@ -1,0 +1,18 @@
+{
+  "name": "Picas y Fijas",
+  "short_name": "Picas y Fijas",
+  "description": "Adivina el código de los demás. La app cuenta las picas y fijas por ti.",
+  "lang": "es",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f4a33",
+  "theme_color": "#0f4a33",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
