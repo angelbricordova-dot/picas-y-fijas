@@ -67,8 +67,14 @@ export class StoreMissing extends Error {}
 
 export function getStore(): Store {
   const env = process.env;
-  const url = env.UPSTASH_REDIS_REST_URL ?? env.KV_REST_API_URL;
-  const token = env.UPSTASH_REDIS_REST_TOKEN ?? env.KV_REST_API_TOKEN;
+  // Vercel puede agregar un prefijo a las variables al conectar la base (p. ej. STORAGE_KV_REST_API_URL).
+  const find = (...suffixes: string[]) => {
+    for (const s of suffixes) if (env[s]) return env[s];
+    const key = Object.keys(env).find((k) => suffixes.some((s) => k.endsWith(`_${s}`)) && env[k]);
+    return key ? env[key] : undefined;
+  };
+  const url = find('UPSTASH_REDIS_REST_URL', 'KV_REST_API_URL');
+  const token = find('UPSTASH_REDIS_REST_TOKEN', 'KV_REST_API_TOKEN');
   if (url && token) return upstash(url, token);
   // En Vercel la memoria no se comparte entre funciones: sin Redis no hay salas online.
   if (env.VERCEL) throw new StoreMissing('Falta conectar la base de datos de salas (Upstash Redis) en Vercel.');
