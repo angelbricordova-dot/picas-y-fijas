@@ -2387,3 +2387,223 @@ label.field .field-label {
     opacity: 0;
   }
 }
+
+/* ——— Historial y repetición ——— */
+
+.topbar-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--on-felt);
+  background: oklch(0.285 0.066 161 / 0.7);
+  white-space: nowrap;
+  transition: transform 120ms var(--ease-out);
+}
+
+.topbar-pill:active {
+  transform: scale(0.96);
+}
+
+.replay {
+  display: grid;
+  gap: 22px;
+  text-align: left;
+}
+
+.replay-block {
+  display: grid;
+  gap: 10px;
+}
+
+.replay-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.replay-secrets {
+  display: grid;
+  gap: 6px;
+}
+
+.replay-secret {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 8px;
+  border-radius: 14px;
+  background: var(--felt-lo);
+}
+
+.replay-secret.is-won {
+  box-shadow: inset 0 0 0 2px oklch(0.8 0.125 82 / 0.7);
+}
+
+.replay-secret .digit-row {
+  margin-left: auto;
+}
+
+.replay-unknown {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--on-felt-3);
+}
+
+.replay-app {
+  display: flex;
+  justify-content: center;
+  padding: 6px 0;
+}
+
+.replay-name {
+  display: grid;
+  font-weight: 650;
+  font-size: 15px;
+  line-height: 1.2;
+  min-width: 0;
+}
+
+.replay-by {
+  font-size: 12px;
+  font-weight: 550;
+  color: var(--on-felt-3);
+}
+
+.replay-rounds {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.replay-round {
+  padding: 10px 2px 2px;
+}
+
+.replay-round:first-child {
+  padding-top: 0;
+}
+
+.replay-round-num {
+  font-family: var(--font-display);
+  font-size: 15px;
+  color: var(--pin);
+}
+
+.replay-row {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px 10px 10px;
+  border-radius: 14px;
+  background: var(--felt-lo);
+}
+
+.replay-row.is-new {
+  animation: row-in 300ms var(--ease-out) both;
+}
+
+.replay-row.is-crack {
+  box-shadow: inset 0 0 0 2px oklch(0.8 0.125 82 / 0.75);
+}
+
+.replay-who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.replay-guess {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.replay-tag {
+  justify-self: start;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--pin);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.replay-empty,
+.replay-summary {
+  font-size: 14px;
+  color: var(--on-felt-2);
+  text-wrap: pretty;
+}
+
+.say--win {
+  flex-wrap: wrap;
+}
+
+.say--win .say-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.say-btn {
+  flex: 1 1 100%;
+  color: var(--on-felt);
+  box-shadow: inset 0 0 0 2px oklch(1 0 0 / 0.45);
+}
+
+.history {
+  display: grid;
+  gap: 8px;
+}
+
+.history-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--felt-deep);
+  text-align: left;
+  transition: transform 120ms var(--ease-out), background-color 160ms ease;
+}
+
+.history-row:active {
+  transform: scale(0.985);
+}
+
+.history-cast {
+  display: flex;
+  flex: none;
+}
+
+.history-cast .avatar + .avatar {
+  margin-left: -10px;
+}
+
+.history-text {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+}
+
+.history-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.history-sub {
+  font-size: 13px;
+  color: var(--on-felt-3);
+}
+
+.history-code {
+  flex: none;
+}

@@ -3,10 +3,12 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { DEFAULT_RULES, type Mode, type RoomView, type Rules } from '../shared/engine';
 import { Button } from './components/ui';
 import { api, ApiError } from './lib/api';
+import { loadHistory } from './lib/history';
 import { useLocalRoom, useOnlineRoom, type Controller } from './lib/room';
 import { getCreds, getPref, getProfile, lastRoom, saveCreds, saveProfile, setPref, type Creds, type Profile } from './lib/session';
 import { OverScreen, PlayScreen, SecretScreen } from './screens/Game';
 import { Lobby } from './screens/Lobby';
+import { HistoryScreen } from './screens/History';
 import { RefereeScreen } from './screens/Referee';
 import { CreateScreen, Home, ProfileScreen } from './screens/Setup';
 
@@ -16,7 +18,8 @@ type Route =
   | { name: 'create'; practice: boolean }
   | { name: 'room'; creds: Creds; initial: RoomView | null }
   | { name: 'practice'; rules: Rules }
-  | { name: 'referee' };
+  | { name: 'referee' }
+  | { name: 'history' };
 
 function setUrlRoom(code: string | null) {
   const url = new URL(location.href);
@@ -110,6 +113,8 @@ export function App() {
           onJoin={(code) => needProfile('join', code)}
           onPractice={() => needProfile('practice')}
           onReferee={() => go({ name: 'referee' })}
+          onHistory={() => go({ name: 'history' })}
+          historyCount={loadHistory().length}
           resume={lastRoom()}
           onResume={() => {
             const c = lastRoom();
@@ -161,6 +166,9 @@ export function App() {
       break;
     case 'practice':
       screen = <PracticeRoom profile={profile!} rules={route.rules} onExit={() => go({ name: 'home' })} />;
+      break;
+    case 'history':
+      screen = <HistoryScreen onBack={() => go({ name: 'home' })} />;
       break;
     case 'referee':
       screen = <RefereeScreen onBack={() => go({ name: 'home' })} />;

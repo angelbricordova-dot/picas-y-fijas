@@ -1,4 +1,4 @@
-import { ArrowLeft, CircleHelp, Gavel, History, Joystick } from 'lucide-react';
+import { ArrowLeft, CircleHelp, Gavel, History, Joystick, ScrollText } from 'lucide-react';
 import { useState } from 'react';
 import { MODES, type Mode, type Rules } from '../../shared/engine';
 import { Avatar, AVATAR_NAMES, AVATARS, type AvatarId } from '../components/Avatar';
@@ -31,6 +31,8 @@ export function Home({
   onJoin,
   onPractice,
   onReferee,
+  onHistory,
+  historyCount,
   resume,
   onResume,
   joinError,
@@ -40,6 +42,8 @@ export function Home({
   onJoin: (code: string) => void;
   onPractice: () => void;
   onReferee: () => void;
+  onHistory: () => void;
+  historyCount: number;
   resume: Creds | null;
   onResume: () => void;
   joinError: string | null;
@@ -51,6 +55,14 @@ export function Home({
   return (
     <div className="screen screen--home">
       <TopBar
+        left={
+          historyCount > 0 ? (
+            <button type="button" className="topbar-pill" onClick={onHistory}>
+              <ScrollText size={18} strokeWidth={2.3} />
+              Partidas jugadas
+            </button>
+          ) : undefined
+        }
         right={
           <IconButton label="Cómo se juega" onClick={() => setHelp(true)}>
             <CircleHelp size={24} strokeWidth={2.2} />

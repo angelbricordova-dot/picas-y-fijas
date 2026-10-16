@@ -20,6 +20,8 @@ Ejemplo: código `4872`, intento `4879` → 3 fijas y ninguna pica.
 
 **Reglas configurables:** de 3 a 6 dígitos, con o sin números repetidos, límite de rondas (8, 10, 15 o sin límite) y tiempo por ronda (30, 60, 90 s o sin reloj).
 
+**Cómo fue la partida:** al terminar, una repetición ronda por ronda con los códigos de todos, cada número dicho y qué dígito fue fija o pica. Las últimas 30 partidas (también las del modo árbitro) quedan en **Partidas jugadas**, guardadas en el celular.
+
 **Rondas justas:** todos juegan cada ronda; los intentos de los demás se revelan al cerrarla. Si dos descubren en la misma ronda, empatan.
 
 ## Publicarla en Vercel

@@ -1,11 +1,13 @@
-import { Check, CircleHelp, Eye, EyeOff, LogOut, Timer, Volume2, VolumeX } from 'lucide-react';
+import { Check, CircleHelp, Eye, EyeOff, History, LogOut, Timer, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { marks, MODES, type GuessView, type RoomView, type SideView } from '../../shared/engine';
 import { Avatar, type Mood } from '../components/Avatar';
 import { HowTo } from '../components/Brand';
 import { CodeEntry } from '../components/CodeEntry';
+import { Replay } from '../components/Replay';
 import { DigitRow, Domino } from '../components/Tiles';
 import { Button, Flash, IconButton, Segmented, Sheet, TopBar } from '../components/ui';
+import { outcomeTitle, recordFromView, saveRecord } from '../lib/history';
 import type { Controller } from '../lib/room';
 import { buzz, clack, fanfare, pips, sadTrombone, setSound, soundOn } from '../lib/sound';
 import {
@@ -511,21 +513,20 @@ export function OverScreen({ c, onLeave }: { c: Controller; onLeave: () => void 
   const winners = v.sides.filter((s) => o.winners.includes(s.id));
   const rounds = v.round;
   const played = useRef(false);
+  const [record] = useState(() => recordFromView(v));
+  const [replay, setReplay] = useState(false);
 
   useEffect(() => {
     if (played.current) return;
     played.current = true;
+    saveRecord(record);
     if (iWon) {
       fanfare();
       buzz([20, 60, 20, 60, 40]);
     } else if (o.winners.length) sadTrombone();
-  }, [iWon, o.winners.length]);
+  }, [iWon, o.winners.length, record]);
 
-  let title: string;
-  if (o.reason === 'draw' || (o.reason === 'limit' && o.winners.length > 1)) title = '¡Empate!';
-  else if (!o.winners.length) title = v.mode === 'race' ? 'Nadie lo descubrió' : 'Se acabó';
-  else if (iWon) title = v.mode === 'teams' ? '¡Ganaron!' : '¡Ganaste!';
-  else title = v.mode === 'teams' ? `Ganó la ${sideName(v, winners[0], { you: false }).toLowerCase()}` : `¡Ganó ${sideName(v, winners[0])}!`;
+  const title = outcomeTitle(v);
 
   const reason: Record<string, string> = {
     cracked: `Descubierto en la ronda ${rounds}.`,
@@ -564,6 +565,12 @@ export function OverScreen({ c, onLeave }: { c: Controller; onLeave: () => void 
           </div>
           <h2 className="over-title">{title}</h2>
           <p className="over-reason">{reason[o.reason]}</p>
+          {record.guesses.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={() => setReplay(true)}>
+              <History size={18} strokeWidth={2.4} />
+              Ver cómo fue la partida
+            </Button>
+          )}
         </div>
 
         {v.mode === 'race' && v.appSecret && (
@@ -601,6 +608,9 @@ export function OverScreen({ c, onLeave }: { c: Controller; onLeave: () => void 
           </section>
         )}
       </div>
+      <Sheet open={replay} onClose={() => setReplay(false)} title="Cómo fue la partida">
+        <Replay record={record} />
+      </Sheet>
       <Flash message={c.flash} onDone={c.clearFlash} />
       <div className="dock">
         {isHost ? (

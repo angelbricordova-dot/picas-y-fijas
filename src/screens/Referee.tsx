@@ -1,13 +1,15 @@
 // Modo árbitro: para jugar en persona. Guardas tu código en tu celular y, cuando el
 // otro dice un número en voz alta, lo escribes y la app te dice qué responder.
-import { ArrowLeft, Minus, Plus, RotateCcw } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, History, Minus, Plus, RotateCcw } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { codeProblem, DEFAULT_RULES, marks, score, type Rules } from '../../shared/engine';
 import { Avatar } from '../components/Avatar';
 import { CodeEntry } from '../components/CodeEntry';
+import { Replay } from '../components/Replay';
 import { DigitRow, Domino, resultLabel } from '../components/Tiles';
 import { Button, Flash, IconButton, Segmented, Sheet, TopBar } from '../components/ui';
-import { getPref, setPref } from '../lib/session';
+import { saveRecord, type GameRecord } from '../lib/history';
+import { getPref, getProfile, setPref } from '../lib/session';
 import { buzz, clack, pips } from '../lib/sound';
 import { useFresh } from '../lib/view';
 import { RulesForm } from './Setup';
@@ -29,6 +31,31 @@ interface RefState {
 
 const fresh0: RefState = { step: 'rules', rules: DEFAULT_RULES, secret: '', heard: [], mine: [], game: 1 };
 
+/** La partida en persona como registro del historial: tú contra tu rival. */
+function refereeRecord(s: RefState, started: number): GameRecord {
+  const len = s.rules.length;
+  const me = getProfile();
+  const rivalWon = s.heard.some((e) => e.fijas === len);
+  const iWon = s.mine.some((e) => e.fijas === len);
+  return {
+    id: `ref-${started}`,
+    at: Date.now(),
+    mode: 'referee',
+    rules: s.rules,
+    title: rivalWon && iWon ? '¡Empate!' : iWon ? '¡Ganaste!' : rivalWon ? 'Te descubrieron' : 'Partida en persona',
+    reason: 'referee',
+    rounds: Math.max(s.heard.length, s.mine.length),
+    sides: [
+      { id: 'me', name: 'Tú', avatar: me?.avatar ?? 'gafas', color: 0, secret: s.secret, mine: true, won: iWon },
+      { id: 'rival', name: 'Tu rival', avatar: 'bigote', color: 2, mine: false, won: rivalWon },
+    ],
+    guesses: [
+      ...s.heard.map((e, i) => ({ round: i + 1, sideId: 'rival', value: e.value, results: [{ target: 'me', fijas: e.fijas, picas: e.picas }] })),
+      ...s.mine.map((e, i) => ({ round: i + 1, sideId: 'me', value: e.value, results: [{ target: 'rival', fijas: e.fijas, picas: e.picas }] })),
+    ].sort((a, b) => a.round - b.round || (a.sideId === 'rival' ? -1 : 1)),
+  };
+}
+
 export function RefereeScreen({ onBack }: { onBack: () => void }) {
   const [s, setS] = useState<RefState>(() => getPref<RefState>('referee', fresh0));
   const [tab, setTab] = useState<'heard' | 'mine'>('heard');
@@ -38,9 +65,20 @@ export function RefereeScreen({ onBack }: { onBack: () => void }) {
   const [p, setP] = useState(0);
   const [restart, setRestart] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
+  const [replay, setReplay] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const started = useRef(getPref<number>('referee-started', Date.now()));
 
   useEffect(() => setPref('referee', s), [s]);
+
+  const record = useMemo(() => refereeRecord(s, started.current), [s]);
+
+  // Cada partida en persona queda en el historial mientras se juega.
+  useEffect(() => {
+    if (s.step !== 'play' || !(s.heard.length || s.mine.length)) return;
+    setPref('referee-started', started.current);
+    saveRecord(record);
+  }, [s, record]);
 
   const len = s.rules.length;
   const cracked = s.heard.some((e) => e.fijas === len);
@@ -207,6 +245,10 @@ export function RefereeScreen({ onBack }: { onBack: () => void }) {
           <span className="say-text">
             ¡Te descubrieron en {s.heard.length} {s.heard.length === 1 ? 'intento' : 'intentos'}!
           </span>
+          <Button variant="ghost" size="sm" className="say-btn" onClick={() => setReplay(true)}>
+            <History size={18} strokeWidth={2.4} />
+            Ver cómo fue
+          </Button>
         </div>
       )}
 
@@ -289,11 +331,16 @@ export function RefereeScreen({ onBack }: { onBack: () => void }) {
         )}
       </div>
 
+      <Sheet open={replay} onClose={() => setReplay(false)} title="Cómo fue la partida">
+        <Replay record={record} />
+      </Sheet>
       <Sheet open={restart} onClose={() => setRestart(false)} title="¿Nueva partida?">
-        <p className="sheet-text">Se borra lo anotado y escribes un código nuevo.</p>
+        <p className="sheet-text">Escribes un código nuevo. Esta partida queda guardada en Partidas jugadas.</p>
         <div className="sheet-actions">
           <Button
             onClick={() => {
+              started.current = Date.now();
+              setPref('referee-started', started.current);
               setS({ ...s, step: 'secret', secret: '', heard: [], mine: [], game: s.game + 1 });
               setRestart(false);
             }}
