@@ -20,6 +20,10 @@ Ejemplo: código `4872`, intento `4879` → 3 fijas y ninguna pica.
 
 **Reglas configurables:** de 3 a 6 dígitos, con o sin números repetidos, límite de rondas (8, 10, 15 o sin límite) y tiempo por ronda (30, 60, 90 s o sin reloj).
 
+**Responder a mano (ajuste de la sala):** la app no cuenta sola; quien tiene el código piensa cuántas fijas y picas son y las marca en su celular. Con "La app revisa las respuestas" encendido no se acepta una cuenta equivocada; apagado, se acepta lo que respondan y al final la repetición muestra quién contó mal. No aplica en la Carrera.
+
+**Tu ficha:** el nombre y el personaje se cambian en cualquier momento (desde el inicio o tocando tu ficha en la mesa).
+
 **Cómo fue la partida:** al terminar, una repetición ronda por ronda con los códigos de todos, cada número dicho y qué dígito fue fija o pica. Las últimas 30 partidas (también las del modo árbitro) quedan en **Partidas jugadas**, guardadas en el celular.
 
 **Rondas justas:** todos juegan cada ronda; los intentos de los demás se revelan al cerrarla. Si dos descubren en la misma ronda, empatan.

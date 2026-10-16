@@ -21,6 +21,7 @@ export function rulesSummary(r: Rules) {
     r.repeats ? 'con repetidos' : 'sin repetir',
     r.maxRounds ? `${r.maxRounds} rondas` : 'sin límite',
     r.timer ? `${r.timer} s por ronda` : null,
+    r.manual ? (r.check ? 'respuesta a mano' : 'respuesta a mano sin revisión') : null,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -33,6 +34,8 @@ export function Home({
   onReferee,
   onHistory,
   historyCount,
+  profile,
+  onProfile,
   resume,
   onResume,
   joinError,
@@ -44,6 +47,8 @@ export function Home({
   onReferee: () => void;
   onHistory: () => void;
   historyCount: number;
+  profile: Profile | null;
+  onProfile: () => void;
   resume: Creds | null;
   onResume: () => void;
   joinError: string | null;
@@ -64,9 +69,17 @@ export function Home({
           ) : undefined
         }
         right={
-          <IconButton label="Cómo se juega" onClick={() => setHelp(true)}>
-            <CircleHelp size={24} strokeWidth={2.2} />
-          </IconButton>
+          <>
+            {profile && (
+              <button type="button" className="me-chip" onClick={onProfile} aria-label={`Cambiar tu ficha: ${profile.name}`}>
+                <Avatar id={profile.avatar} size={26} />
+                <span className="me-chip-name">{profile.name}</span>
+              </button>
+            )}
+            <IconButton label="Cómo se juega" onClick={() => setHelp(true)}>
+              <CircleHelp size={24} strokeWidth={2.2} />
+            </IconButton>
+          </>
         }
       />
       <section className="home-hero">
@@ -146,6 +159,55 @@ export function Home({
   );
 }
 
+/** Nombre + personaje. Se usa al empezar y para cambiarlos después (también en la mesa). */
+export function ProfileFields({
+  name,
+  setName,
+  avatar,
+  setAvatar,
+  color = 0,
+}: {
+  name: string;
+  setName: (n: string) => void;
+  avatar: AvatarId;
+  setAvatar: (a: AvatarId) => void;
+  color?: number;
+}) {
+  return (
+    <>
+      <label className="field">
+        <span className="field-label">Tu nombre</span>
+        <input
+          className="text-input"
+          value={name}
+          onChange={(e) => setName(e.target.value.slice(0, 14))}
+          placeholder="Como te dicen"
+          autoComplete="nickname"
+          enterKeyHint="done"
+          maxLength={14}
+        />
+      </label>
+      <fieldset className="field">
+        <legend className="field-label">Elige tu personaje</legend>
+        <div className="avatar-grid">
+          {AVATARS.map((a) => (
+            <button
+              key={a}
+              type="button"
+              className={`avatar-pick ${a === avatar ? 'is-on' : ''}`}
+              aria-pressed={a === avatar}
+              aria-label={AVATAR_NAMES[a]}
+              onClick={() => setAvatar(a)}
+            >
+              <Avatar id={a} color={color} size={52} mood={a === avatar ? 'happy' : 'idle'} />
+            </button>
+          ))}
+        </div>
+      </fieldset>
+    </>
+  );
+}
+
 export function ProfileScreen({
   initial,
   invite,
@@ -185,35 +247,7 @@ export function ProfileScreen({
           <Avatar id={avatar} color={0} size={112} mood={ok ? 'happy' : 'idle'} />
         </div>
         <h2 className="screen-title">{invite ? 'Te invitaron a jugar' : '¿Quién juega?'}</h2>
-        <label className="field">
-          <span className="field-label">Tu nombre</span>
-          <input
-            className="text-input"
-            value={name}
-            onChange={(e) => setName(e.target.value.slice(0, 14))}
-            placeholder="Como te dicen"
-            autoComplete="nickname"
-            enterKeyHint="done"
-            maxLength={14}
-          />
-        </label>
-        <fieldset className="field">
-          <legend className="field-label">Elige tu personaje</legend>
-          <div className="avatar-grid">
-            {AVATARS.map((a) => (
-              <button
-                key={a}
-                type="button"
-                className={`avatar-pick ${a === avatar ? 'is-on' : ''}`}
-                aria-pressed={a === avatar}
-                aria-label={AVATAR_NAMES[a]}
-                onClick={() => setAvatar(a)}
-              >
-                <Avatar id={a} color={0} size={52} mood={a === avatar ? 'happy' : 'idle'} />
-              </button>
-            ))}
-          </div>
-        </fieldset>
+        <ProfileFields name={name} setName={setName} avatar={avatar} setAvatar={setAvatar} />
         {error && (
           <p className="field-error" role="alert">
             {error}
@@ -264,10 +298,12 @@ export function RulesForm({
   rules,
   onChange,
   practice = false,
+  mode,
 }: {
   rules: Rules;
   onChange: (r: Rules) => void;
   practice?: boolean;
+  mode?: Mode;
 }) {
   return (
     <div className="rules">
@@ -316,6 +352,33 @@ export function RulesForm({
           />
         </div>
       )}
+      {!practice && (
+        <div className="rule-group">
+          <Toggle
+            checked={rules.manual && mode !== 'race'}
+            disabled={mode === 'race'}
+            onChange={(manual) => onChange({ ...rules, manual })}
+            label="Responder a mano"
+            hint={
+              mode === 'race'
+                ? 'No aplica en la Carrera: ahí el código es de la app.'
+                : 'La app no cuenta: quien tiene el código piensa cuántas fijas y picas son y las marca.'
+            }
+          />
+          {rules.manual && mode !== 'race' && (
+            <Toggle
+              checked={rules.check}
+              onChange={(check) => onChange({ ...rules, check })}
+              label="La app revisa las respuestas"
+              hint={
+                rules.check
+                  ? 'Si alguien cuenta mal, la app no lo deja pasar y le pide revisar.'
+                  : 'Lo que respondan es lo que verá el otro. Al final se ve quién se equivocó.'
+              }
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -360,7 +423,7 @@ export function CreateScreen({
         )}
         <section className="block">
           <h2 className="block-title">Reglas</h2>
-          <RulesForm rules={rules} onChange={setRules} practice={practice} />
+          <RulesForm rules={rules} onChange={setRules} practice={practice} mode={mode} />
         </section>
         {error && (
           <p className="field-error" role="alert">

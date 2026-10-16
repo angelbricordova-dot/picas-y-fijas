@@ -1,9 +1,10 @@
 import { Check, CircleHelp, Eye, EyeOff, History, LogOut, Timer, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { marks, MODES, type GuessView, type RoomView, type SideView } from '../../shared/engine';
+import { isManual, marks, MODES, type GuessView, type RoomView, type SideView } from '../../shared/engine';
 import { Avatar, type Mood } from '../components/Avatar';
 import { HowTo } from '../components/Brand';
 import { CodeEntry } from '../components/CodeEntry';
+import { Counter } from '../components/Counter';
 import { Replay } from '../components/Replay';
 import { DigitRow, Domino } from '../components/Tiles';
 import { Button, Flash, IconButton, Segmented, Sheet, TopBar } from '../components/ui';
@@ -176,9 +177,9 @@ export function SecretScreen({ c, onLeave }: { c: Controller; onLeave: () => voi
 
 // ——— Juego ———
 
-function FaceDown({ width = 64 }: { width?: number }) {
+function FaceDown({ width = 64, label = 'Ya jugó, se revela al cerrar la ronda' }: { width?: number; label?: string }) {
   return (
-    <svg className="domino domino--back" viewBox="0 0 208 110" width={width} height={(width * 110) / 208} aria-label="Ya jugó, se revela al cerrar la ronda" role="img">
+    <svg className="domino domino--back" viewBox="0 0 208 110" width={width} height={(width * 110) / 208} aria-label={label} role="img">
       <rect x="1" y="7" width="206" height="102" rx="20" fill="var(--bone-shade)" />
       <rect x="1" y="1" width="206" height="102" rx="20" fill="var(--bone-2)" />
       <rect x="14" y="14" width="180" height="76" rx="12" fill="none" stroke="var(--bone-edge)" strokeWidth="4" strokeDasharray="10 8" />
@@ -188,7 +189,8 @@ function FaceDown({ width = 64 }: { width?: number }) {
 
 function MyRow({ v, g, fresh }: { v: RoomView; g: GuessView; fresh: boolean }) {
   const len = v.rules.length;
-  const multi = (g.results?.length ?? 0) > 1;
+  const pending = g.pending ?? [];
+  const multi = (g.results?.length ?? 0) + pending.length > 1;
   return (
     <li className={`row ${fresh ? 'is-new' : ''}`}>
       <span className="row-round">{g.round}</span>
@@ -213,6 +215,20 @@ function MyRow({ v, g, fresh }: { v: RoomView; g: GuessView; fresh: boolean }) {
             </span>
           );
         })}
+        {pending.map((t) => {
+          const target = v.sides.find((s) => s.id === t);
+          return (
+            <span key={t} className="result result--pending">
+              {multi && target && (
+                <span className="result-who">
+                  <MiniAvatar v={v} side={target} size={18} mood="think" />
+                </span>
+              )}
+              <FaceDown width={multi ? 54 : 72} label={`Esperando que ${sideName(v, target, { you: false })} responda`} />
+              {!multi && <span className="result-wait">contando…</span>}
+            </span>
+          );
+        })}
       </span>
     </li>
   );
@@ -221,6 +237,9 @@ function MyRow({ v, g, fresh }: { v: RoomView; g: GuessView; fresh: boolean }) {
 function TheirRow({ v, g, fresh, secret }: { v: RoomView; g: GuessView; fresh: boolean; secret?: string }) {
   const side = v.sides.find((s) => s.id === g.sideId);
   const res = g.results?.find((r) => r.target === v.mySide);
+  const toAnswer = Boolean(v.mySide && g.pending?.includes(v.mySide));
+  // A mano, la app no ayuda a contar: sin marcas de fija o pica en tus dígitos.
+  if (isManual(v)) secret = undefined;
   return (
     <li className={`row row--theirs ${fresh ? 'is-new' : ''}`}>
       <span className="row-round">{g.round}</span>
@@ -241,6 +260,7 @@ function TheirRow({ v, g, fresh, secret }: { v: RoomView; g: GuessView; fresh: b
           <DigitRow value={g.value ?? ''} size="sm" marks={secret && g.value ? marks(secret, g.value) : undefined} />
           <span className="row-results">
             {res && <Domino fijas={res.fijas} picas={res.picas} width={62} animate={fresh} win={res.fijas === v.rules.length} />}
+            {toAnswer && <span className="row-tag">Te toca responder</span>}
           </span>
         </>
       )}
@@ -314,9 +334,15 @@ export function PlayScreen({ c, onLeave }: { c: Controller; onLeave: () => void 
 
   const myGuesses = v.guesses.filter((g) => g.sideId === v.mySide);
   const theirGuesses = v.guesses.filter(
-    (g) => g.sideId !== v.mySide && (g.hidden || g.results?.some((r) => r.target === v.mySide)),
+    (g) =>
+      g.sideId !== v.mySide &&
+      (g.hidden || g.results?.some((r) => r.target === v.mySide) || Boolean(v.mySide && g.pending?.includes(v.mySide))),
   );
-  const keyOf = (g: GuessView) => `${g.id}:${g.hidden ? 'h' : 'v'}`;
+  const keyOf = (g: GuessView) => `${g.id}:${g.hidden ? 'h' : 'v'}:${g.results?.length ?? 0}`;
+  const toAnswer = v.mySide ? v.guesses.filter((g) => g.pending?.includes(v.mySide!) && g.value) : [];
+  const awaiting = [...new Set(myGuesses.filter((g) => g.round === v.round).flatMap((g) => g.pending ?? []))]
+    .map((id) => v.sides.find((s) => s.id === id))
+    .filter((s): s is SideView => Boolean(s));
   const fresh = useFresh(v.guesses.map(keyOf));
 
   // Sonido y vibración cuando llega un resultado nuevo.
@@ -329,7 +355,7 @@ export function PlayScreen({ c, onLeave }: { c: Controller; onLeave: () => void 
     }
     const news = v.guesses.filter((g) => !g.hidden && !heard.current!.has(keyOf(g)));
     news.forEach((g) => heard.current!.add(keyOf(g)));
-    const own = news.find((g) => g.sideId === v.mySide);
+    const own = news.find((g) => g.sideId === v.mySide && g.results?.length);
     if (own?.results?.[0]) {
       const best = own.results.reduce((a, b) => (b.fijas > a.fijas ? b : a));
       clack();
@@ -355,6 +381,22 @@ export function PlayScreen({ c, onLeave }: { c: Controller; onLeave: () => void 
     lockedNote = (
       <span className="entry-locked-text">
         {mine?.surrendered ? 'Abandonaste esta partida' : 'Te descubrieron. Mira cómo termina.'}
+      </span>
+    );
+  } else if (iPlayed && !waiting.length && awaiting.length) {
+    lockedNote = (
+      <span className="entry-locked-text">
+        <span className="waiting-faces" aria-hidden>
+          {awaiting.map((s) => (
+            <MiniAvatar key={s.id} v={v} side={s} mood="think" size={24} />
+          ))}
+        </span>
+        {awaiting.map((s) => sideName(v, s, { you: false })).join(' y ')} está{awaiting.length > 1 ? 'n' : ''} contando tu intento
+        <span className="dots" aria-hidden>
+          <i />
+          <i />
+          <i />
+        </span>
       </span>
     );
   } else if (iPlayed) {
@@ -465,11 +507,19 @@ export function PlayScreen({ c, onLeave }: { c: Controller; onLeave: () => void 
             {theirGuesses.map((g) => (
               <TheirRow key={keyOf(g)} v={v} g={g} fresh={fresh.has(keyOf(g))} secret={mine?.secret} />
             ))}
-            <li className="board-note">Solo tú ves qué números de tu código son fijas o picas.</li>
+            <li className="board-note">
+              {isManual(v)
+                ? 'Tú cuentas las fijas y picas de cada intento contra tu código.'
+                : 'Solo tú ves qué números de tu código son fijas o picas.'}
+            </li>
           </ul>
         ) : (
           <div className="empty">
-            <p>Aquí verás lo que intentan los demás contra tu código, y la app les responde por ti.</p>
+            <p>
+              {isManual(v)
+                ? 'Aquí verás lo que intentan los demás contra tu código. Tú les respondes cuántas fijas y picas son.'
+                : 'Aquí verás lo que intentan los demás contra tu código, y la app les responde por ti.'}
+            </p>
           </div>
         )}
       </div>
@@ -478,18 +528,65 @@ export function PlayScreen({ c, onLeave }: { c: Controller; onLeave: () => void 
       {turnName && !iPlayed && <p className="turn-note">Le toca a {turnName}, pero también puedes enviar tú.</p>}
       <Flash message={c.flash} onDone={c.clearFlash} />
       <div className="tray">
+        {toAnswer.length > 0 && <AnswerCard key={toAnswer[0].id} v={v} g={toAnswer[0]} c={c} more={toAnswer.length - 1} />}
+        <div hidden={toAnswer.length > 0}>
         <CodeEntry
           rules={v.rules}
           busy={c.busy}
-          locked={out || iPlayed}
+          locked={out || iPlayed || toAnswer.length > 0}
           lockedNote={lockedNote}
           notesScope={`${v.code}:${v.game}:${v.me}`}
           lastValue={myGuesses[myGuesses.length - 1]?.value}
           submitLabel="Probar"
           onSubmit={(value) => c.send('guess', { value })}
         />
+        </div>
       </div>
     </div>
+  );
+}
+
+/** Respuesta a mano: quien tiene el código cuenta las fijas y picas del intento ajeno. */
+function AnswerCard({ v, g, c, more }: { v: RoomView; g: GuessView; c: Controller; more: number }) {
+  const [fijas, setFijas] = useState(0);
+  const [picas, setPicas] = useState(0);
+  const side = v.sides.find((s) => s.id === g.sideId);
+  const mine = v.sides.find((s) => s.id === v.mySide);
+  const len = v.rules.length;
+  const tooMany = fijas + picas > len;
+  return (
+    <section className="answer" aria-label="Responder intento">
+      <div className="answer-head">
+        {side && <MiniAvatar v={v} side={side} size={30} mood="think" />}
+        <span className="answer-who">{side ? sideName(v, side, { you: false }) : ''} dijo</span>
+        <DigitRow value={g.value ?? ''} size="sm" />
+      </div>
+      <div className="answer-row">
+        <p className="answer-ask">¿Cuántas fijas y picas tiene contra tu código?</p>
+        <MyCode value={mine?.secret} label="Tu código" />
+      </div>
+      <div className="tally-steppers">
+        <Counter label="Fijas" value={fijas} onChange={setFijas} max={len} kind="fija" />
+        <Counter label="Picas" value={picas} onChange={setPicas} max={len} kind="pica" />
+      </div>
+      <div className="answer-foot">
+        <Domino fijas={Math.min(fijas, 6)} picas={Math.min(picas, 6)} width={70} />
+        <Button
+          size="md"
+          disabled={c.busy || tooMany}
+          onClick={async () => {
+            const ok = await c.send('answer', { guessId: g.id, fijas, picas });
+            if (ok) {
+              clack();
+              pips(fijas, picas, 0.085, 0.1);
+              buzz(12);
+            } else buzz([10, 50, 10]);
+          }}
+        >
+          {tooMany ? `Máximo ${len} en total` : more > 0 ? `Responder (faltan ${more})` : 'Responder'}
+        </Button>
+      </div>
+    </section>
   );
 }
 

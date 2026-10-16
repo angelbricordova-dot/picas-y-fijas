@@ -35,7 +35,7 @@ test('marks coincide con score y no cuenta de más', () => {
   assert.deepEqual(marks('1234', '1243'), ['fija', 'fija', 'pica', 'pica']);
   assert.deepEqual(marks('1123', '3111'), ['pica', 'fija', 'pica', 'nada']);
   for (let i = 0; i < 500; i++) {
-    const rules = { length: 3 + (i % 4), repeats: i % 2 === 0, maxRounds: 0, timer: 0 };
+    const rules = { length: 3 + (i % 4), repeats: i % 2 === 0, maxRounds: 0, timer: 0, manual: false, check: true };
     const s = randomCode(rules);
     const g = randomCode(rules);
     const m = marks(s, g);
@@ -46,7 +46,7 @@ test('marks coincide con score y no cuenta de más', () => {
 });
 
 test('codeProblem valida largo y repetidos', () => {
-  const rules = { length: 4, repeats: false, maxRounds: 0, timer: 0 };
+  const rules = { length: 4, repeats: false, maxRounds: 0, timer: 0, manual: false, check: true };
   assert.equal(codeProblem('1234', rules), null);
   assert.match(codeProblem('1123', rules)!, /repetir/);
   assert.match(codeProblem('123', rules)!, /4 dígitos/);
@@ -170,4 +170,70 @@ test('revancha reinicia con los mismos jugadores', () => {
   applyAction(r, 'p0', { type: 'rematch' }, T);
   assert.equal(r.phase, 'lobby', 'sin rival vuelve a la mesa');
   assert.throws(() => applyAction(r, 'p0', { type: 'start' }, T), /Falta 1/);
+});
+
+function manualDuel(check: boolean): Room {
+  const r = room('duel', 2, { manual: true, check });
+  applyAction(r, 'p0', { type: 'start' }, T);
+  applyAction(r, 'p0', { type: 'secret', value: '4872' }, T);
+  applyAction(r, 'p1', { type: 'secret', value: '1350' }, T);
+  return r;
+}
+
+test('a mano: la app no cuenta, responde el dueño del código', () => {
+  const r = manualDuel(true);
+  applyAction(r, 'p1', { type: 'guess', value: '4879' }, T);
+  const g = r.guesses[0];
+  assert.deepEqual(g.pending, ['p0']);
+  assert.deepEqual(g.results, [], 'sin respuesta automática');
+  // Quien adivina no ve la cuenta; el dueño ve el intento para responder.
+  assert.deepEqual(viewFor(r, 'p1', T).guesses[0].results, []);
+  assert.equal(viewFor(r, 'p1', T).guesses[0].truth, undefined);
+  assert.equal(viewFor(r, 'p0', T).guesses[0].value, '4879');
+  assert.deepEqual(viewFor(r, 'p0', T).guesses[0].pending, ['p0']);
+  // Con revisión, una cuenta equivocada no se acepta.
+  assert.throws(() => applyAction(r, 'p0', { type: 'answer', guessId: g.id, fijas: 2, picas: 1 }, T), /Revisa/);
+  applyAction(r, 'p0', { type: 'answer', guessId: g.id, fijas: 3, picas: 0 }, T);
+  assert.deepEqual(viewFor(r, 'p1', T).guesses[0].results, [{ target: 'p0', fijas: 3, picas: 0 }]);
+  // La ronda no cierra hasta que se respondan todos los intentos.
+  applyAction(r, 'p0', { type: 'guess', value: '1234' }, T);
+  assert.equal(r.round, 1);
+  applyAction(r, 'p1', { type: 'answer', guessId: '1-p0', fijas: 1, picas: 1 }, T);
+  assert.equal(r.round, 2);
+});
+
+test('a mano sin revisión: se acepta lo que respondan y al final se ve la cuenta real', () => {
+  const r = manualDuel(false);
+  applyAction(r, 'p1', { type: 'guess', value: '4879' }, T);
+  applyAction(r, 'p0', { type: 'guess', value: '5678' }, T);
+  applyAction(r, 'p0', { type: 'answer', guessId: '1-p1', fijas: 2, picas: 1 }, T);
+  applyAction(r, 'p1', { type: 'answer', guessId: '1-p0', fijas: 0, picas: 0 }, T);
+  assert.deepEqual(r.guesses[0].results[0], { target: 'p0', fijas: 2, picas: 1 });
+  // Adivinar el código exacto lo descubre sin esperar respuesta.
+  applyAction(r, 'p1', { type: 'guess', value: '4872' }, T);
+  assert.deepEqual(r.guesses[2].pending, []);
+  applyAction(r, 'p0', { type: 'guess', value: '0123' }, T);
+  applyAction(r, 'p1', { type: 'answer', guessId: '2-p0', fijas: 0, picas: 2 }, T);
+  assert.deepEqual(r.outcome, { winners: ['p1'], reason: 'cracked' });
+  const over = viewFor(r, 'p0', T).guesses[0];
+  assert.deepEqual(over.truth, [{ target: 'p0', fijas: 3, picas: 0 }]);
+  assert.deepEqual(over.results, [{ target: 'p0', fijas: 2, picas: 1 }]);
+});
+
+test('a mano con reloj: lo que nadie respondió se responde solo al vencer el tiempo', () => {
+  const r = room('duel', 2, { manual: true, timer: 30 });
+  applyAction(r, 'p0', { type: 'start' }, T);
+  applyAction(r, 'p0', { type: 'secret', value: '4872' }, T);
+  applyAction(r, 'p1', { type: 'secret', value: '1350' }, T);
+  applyAction(r, 'p1', { type: 'guess', value: '4879' }, T);
+  assert.equal(tick(r, T + 30_000), true);
+  assert.deepEqual(r.guesses[0].results, [{ target: 'p0', fijas: 3, picas: 0 }]);
+  assert.equal(r.round, 2);
+});
+
+test('a mano no aplica en la carrera', () => {
+  const r = room('race', 1, { manual: true });
+  applyAction(r, 'p0', { type: 'start' }, T);
+  applyAction(r, 'p0', { type: 'guess', value: '0123' }, T);
+  assert.equal(r.guesses[0].results.length, 1);
 });

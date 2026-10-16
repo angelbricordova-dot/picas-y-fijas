@@ -1,10 +1,11 @@
 // Modo árbitro: para jugar en persona. Guardas tu código en tu celular y, cuando el
 // otro dice un número en voz alta, lo escribes y la app te dice qué responder.
-import { ArrowLeft, History, Minus, Plus, RotateCcw } from 'lucide-react';
+import { ArrowLeft, History, RotateCcw } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { codeProblem, DEFAULT_RULES, marks, score, type Rules } from '../../shared/engine';
 import { Avatar } from '../components/Avatar';
 import { CodeEntry } from '../components/CodeEntry';
+import { Counter } from '../components/Counter';
 import { Replay } from '../components/Replay';
 import { DigitRow, Domino, resultLabel } from '../components/Tiles';
 import { Button, Flash, IconButton, Segmented, Sheet, TopBar } from '../components/ui';
@@ -353,35 +354,6 @@ export function RefereeScreen({ onBack }: { onBack: () => void }) {
           </Button>
         </div>
       </Sheet>
-    </div>
-  );
-}
-
-function Counter({
-  label,
-  value,
-  onChange,
-  max,
-  kind,
-}: {
-  label: string;
-  value: number;
-  onChange: (n: number) => void;
-  max: number;
-  kind: 'fija' | 'pica';
-}) {
-  return (
-    <div className={`counter counter--${kind}`} role="group" aria-label={label}>
-      <span className="counter-label">{label}</span>
-      <div className="stepper">
-        <button type="button" disabled={value <= 0} onClick={() => onChange(value - 1)} aria-label={`Menos ${label.toLowerCase()}`}>
-          <Minus size={20} strokeWidth={2.8} />
-        </button>
-        <output aria-live="polite">{value}</output>
-        <button type="button" disabled={value >= max} onClick={() => onChange(value + 1)} aria-label={`Más ${label.toLowerCase()}`}>
-          <Plus size={20} strokeWidth={2.8} />
-        </button>
-      </div>
     </div>
   );
 }

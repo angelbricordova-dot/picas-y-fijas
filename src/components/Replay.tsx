@@ -19,7 +19,10 @@ function GuessLine({ r, g, fresh }: { r: GameRecord; g: RecordGuess; fresh: bool
   const len = r.rules.length;
   const single = g.results.length === 1 ? g.results[0] : null;
   const secret = single ? targetSecret(r, single.target) : undefined;
-  const cracked = g.results.some((x) => x.fijas === len);
+  const cracked = (g.truth ?? g.results).some((x) => x.fijas === len);
+  const wrong = (g.truth ?? [])
+    .map((t) => ({ t, given: g.results.find((x) => x.target === t.target) }))
+    .filter(({ t, given }) => given && (given.fijas !== t.fijas || given.picas !== t.picas));
   return (
     <li className={`replay-row ${fresh ? 'is-new' : ''} ${cracked ? 'is-crack' : ''}`}>
       {side && (
@@ -50,6 +53,12 @@ function GuessLine({ r, g, fresh }: { r: GameRecord; g: RecordGuess; fresh: bool
         </span>
       </span>
       {cracked && <span className="replay-tag">¡Lo descubrió!</span>}
+      {wrong.map(({ t }) => (
+        <span key={t.target} className="replay-tag replay-tag--wrong">
+          {r.sides.find((s) => s.id === t.target)?.name ?? ''} contó mal: eran {t.fijas} {t.fijas === 1 ? 'fija' : 'fijas'} y {t.picas}{' '}
+          {t.picas === 1 ? 'pica' : 'picas'}
+        </span>
+      ))}
     </li>
   );
 }

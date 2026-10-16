@@ -21,6 +21,8 @@ export interface RecordGuess {
   by?: string;
   value: string;
   results: GuessResult[];
+  /** La cuenta correcta (respuesta a mano), para ver quién se equivocó. */
+  truth?: GuessResult[];
 }
 
 export interface GameRecord {
@@ -112,6 +114,7 @@ export function recordFromView(v: RoomView): GameRecord {
         by: v.mode === 'teams' ? playerById(v, g.by)?.name : undefined,
         value: g.value!,
         results: g.results!,
+        truth: v.rules.manual ? g.truth : undefined,
       })),
   };
 }

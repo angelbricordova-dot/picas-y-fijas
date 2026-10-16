@@ -1,11 +1,12 @@
-import { ArrowLeftRight, Check, Copy, Crown, LogOut, Settings2, Share2, X } from 'lucide-react';
+import { ArrowLeftRight, Check, Copy, Crown, LogOut, Pencil, Settings2, Share2, X } from 'lucide-react';
 import { useState, type CSSProperties } from 'react';
 import { MODES, startProblem, type Room, type RoomView } from '../../shared/engine';
-import { Avatar } from '../components/Avatar';
+import { Avatar, type AvatarId } from '../components/Avatar';
 import { Button, IconButton, Sheet, TopBar } from '../components/ui';
 import type { Controller } from '../lib/room';
+import { saveProfile } from '../lib/session';
 import { colorOf, playerById, TEAM_NAMES, type PlayerV } from '../lib/view';
-import { ModeList, rulesSummary, RulesForm } from './Setup';
+import { ModeList, ProfileFields, rulesSummary, RulesForm } from './Setup';
 
 type SeatPos = 'b' | 'r' | 't' | 'l';
 
@@ -35,6 +36,21 @@ export function Lobby({ c, onLeave }: { c: Controller; onLeave: () => void }) {
   const isHost = v.hostId === v.me;
   const me = playerById(v, v.me)!;
   const [settings, setSettings] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(me.name);
+  const [avatar, setAvatar] = useState<AvatarId>(me.avatar as AvatarId);
+  const openEditor = () => {
+    setName(me.name);
+    setAvatar(me.avatar as AvatarId);
+    setEditing(true);
+  };
+  const saveMe = async () => {
+    const ok = await c.send('profile', { name: name.trim(), avatar });
+    if (ok) {
+      saveProfile({ name: name.trim(), avatar });
+      setEditing(false);
+    }
+  };
   const [copied, setCopied] = useState(false);
   const problem = startProblem({ ...v, players: v.players.map((p) => ({ ...p, token: '' })) } as unknown as Room);
   const link = `${location.origin}/?sala=${v.code}`;
@@ -118,7 +134,16 @@ export function Lobby({ c, onLeave }: { c: Controller; onLeave: () => void }) {
               {player ? (
                 <>
                   <span className="seat-avatar">
-                    <Avatar id={player.avatar} color={colorOf(v, player)} size={58} mood={player.id === v.me ? 'happy' : 'idle'} />
+                    {player.id === v.me ? (
+                      <button type="button" className="seat-me" onClick={openEditor} aria-label="Cambiar tu nombre o personaje">
+                        <Avatar id={player.avatar} color={colorOf(v, player)} size={58} mood="happy" />
+                        <span className="seat-edit" aria-hidden>
+                          <Pencil size={12} strokeWidth={2.8} />
+                        </span>
+                      </button>
+                    ) : (
+                      <Avatar id={player.avatar} color={colorOf(v, player)} size={58} mood="idle" />
+                    )}
                     {player.id === v.hostId && (
                       <span className="seat-crown" title="Creó la sala">
                         <Crown size={14} strokeWidth={2.6} />
@@ -154,6 +179,11 @@ export function Lobby({ c, onLeave }: { c: Controller; onLeave: () => void }) {
 
         <p className="lobby-rules">{rulesSummary(v.rules)}</p>
 
+        <Button variant="quiet" size="sm" onClick={openEditor}>
+          <Pencil size={16} strokeWidth={2.4} />
+          Cambiar mi nombre o personaje
+        </Button>
+
         {v.mode === 'teams' && (
           <Button variant="ghost" size="sm" onClick={() => c.send('team', { team: me.team === 0 ? 1 : 0 })} disabled={c.busy}>
             <ArrowLeftRight size={18} strokeWidth={2.4} />
@@ -181,6 +211,24 @@ export function Lobby({ c, onLeave }: { c: Controller; onLeave: () => void }) {
         )}
       </div>
 
+      <Sheet open={editing} onClose={() => setEditing(false)} title="Tu ficha">
+        <form
+          className="profile profile--sheet"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (name.trim()) void saveMe();
+          }}
+        >
+          <div className="profile-preview" aria-hidden>
+            <Avatar id={avatar} color={colorOf(v, me)} size={92} mood="happy" />
+          </div>
+          <ProfileFields name={name} setName={setName} avatar={avatar} setAvatar={setAvatar} color={colorOf(v, me)} />
+          <Button type="submit" disabled={!name.trim() || c.busy}>
+            Guardar
+          </Button>
+        </form>
+      </Sheet>
+
       <Sheet open={settings} onClose={() => setSettings(false)} title="Modalidad y reglas">
         <ModeList
           value={v.mode}
@@ -188,7 +236,7 @@ export function Lobby({ c, onLeave }: { c: Controller; onLeave: () => void }) {
           counts={v.players.length}
         />
         <h3 className="block-title block-title--sheet">Reglas</h3>
-        <RulesForm rules={v.rules} onChange={(rules) => c.send('configure', { rules })} />
+        <RulesForm rules={v.rules} onChange={(rules) => c.send('configure', { rules })} mode={v.mode} />
       </Sheet>
     </div>
   );

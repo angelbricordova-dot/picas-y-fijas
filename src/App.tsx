@@ -14,7 +14,7 @@ import { CreateScreen, Home, ProfileScreen } from './screens/Setup';
 
 type Route =
   | { name: 'home' }
-  | { name: 'profile'; then: 'create' | 'practice' | 'join'; code?: string }
+  | { name: 'profile'; then: 'create' | 'practice' | 'join' | 'home'; code?: string }
   | { name: 'create'; practice: boolean }
   | { name: 'room'; creds: Creds; initial: RoomView | null }
   | { name: 'practice'; rules: Rules }
@@ -115,6 +115,8 @@ export function App() {
           onReferee={() => go({ name: 'referee' })}
           onHistory={() => go({ name: 'history' })}
           historyCount={loadHistory().length}
+          profile={profile}
+          onProfile={() => go({ name: 'profile', then: 'home' })}
           resume={lastRoom()}
           onResume={() => {
             const c = lastRoom();
@@ -137,6 +139,7 @@ export function App() {
             saveProfile(p);
             setProfile(p);
             if (route.then === 'join' && route.code) void join(route.code, p);
+            else if (route.then === 'home') go({ name: 'home' });
             else go({ name: 'create', practice: route.then === 'practice' });
           }}
         />

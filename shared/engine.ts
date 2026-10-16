@@ -13,6 +13,10 @@ export interface Rules {
   maxRounds: number;
   /** Segundos por ronda; 0 = sin reloj. */
   timer: number;
+  /** Respuesta a mano: quien tiene el código cuenta las fijas y picas (no aplica en la carrera). */
+  manual: boolean;
+  /** Con respuesta a mano, la app no acepta una respuesta equivocada. */
+  check: boolean;
 }
 
 export interface Player {
@@ -50,7 +54,12 @@ export interface Guess {
   sideId: string;
   by: string;
   value: string;
+  /** Respuestas dadas (automáticas o a mano). */
   results: GuessResult[];
+  /** La cuenta correcta; con respuesta a mano solo se revela al final. */
+  truth?: GuessResult[];
+  /** Lados que todavía deben responder este intento. */
+  pending?: string[];
   at: number;
 }
 
@@ -89,6 +98,7 @@ export type Action =
   | { type: 'start' }
   | { type: 'secret'; value: string }
   | { type: 'guess'; value: string }
+  | { type: 'answer'; guessId: string; fijas: number; picas: number }
   | { type: 'rematch' }
   | { type: 'lobby' }
   | { type: 'leave' };
@@ -119,7 +129,7 @@ export const MODES: Record<Mode, { min: number; max: number; name: string; blurb
   },
 };
 
-export const DEFAULT_RULES: Rules = { length: 4, repeats: false, maxRounds: 0, timer: 0 };
+export const DEFAULT_RULES: Rules = { length: 4, repeats: false, maxRounds: 0, timer: 0, manual: false, check: true };
 export const ROUND_OPTIONS = [0, 8, 10, 15] as const;
 export const TIMER_OPTIONS = [0, 30, 60, 90] as const;
 
@@ -128,7 +138,7 @@ export function normalizeRules(input: Partial<Rules> | undefined, base: Rules = 
   const length = Math.min(6, Math.max(3, Math.round(Number(r.length) || 4)));
   const maxRounds = (ROUND_OPTIONS as readonly number[]).includes(Number(r.maxRounds)) ? Number(r.maxRounds) : 0;
   const timer = (TIMER_OPTIONS as readonly number[]).includes(Number(r.timer)) ? Number(r.timer) : 0;
-  return { length, repeats: Boolean(r.repeats), maxRounds, timer };
+  return { length, repeats: Boolean(r.repeats), maxRounds, timer, manual: Boolean(r.manual), check: r.check === undefined ? true : Boolean(r.check) };
 }
 
 /** Fijas: dígito correcto en su lugar. Picas: dígito correcto en otro lugar. */
@@ -183,6 +193,20 @@ export function randomCode(rules: Rules, rand: () => number = Math.random): stri
     out += d;
   }
   return out;
+}
+
+/** Si en esta sala quien tiene el código responde a mano. */
+export const isManual = (room: { mode: Mode; rules: Rules }) => room.rules.manual && room.mode !== 'race';
+
+const truthOf = (g: Guess) => g.truth ?? g.results;
+
+/** Responde con la cuenta correcta lo que nadie respondió (reloj vencido, jugador que se fue). */
+function autoAnswer(g: Guess, targets: string[]) {
+  for (const t of targets) {
+    const truth = truthOf(g).find((r) => r.target === t);
+    if (truth && !g.results.some((r) => r.target === t)) g.results.push({ ...truth });
+  }
+  g.pending = (g.pending ?? []).filter((t) => !targets.includes(t));
 }
 
 export function sideOf(room: Room, pid: string): Side | undefined {
@@ -274,7 +298,7 @@ function resolveRound(room: Room, now: number) {
   const roundGuesses = room.guesses.filter((g) => g.round === r);
 
   if (room.mode === 'race') {
-    const crackers = roundGuesses.filter((g) => g.results[0]?.fijas === len).map((g) => g.sideId);
+    const crackers = roundGuesses.filter((g) => truthOf(g)[0]?.fijas === len).map((g) => g.sideId);
     if (crackers.length) return finish(room, [...new Set(crackers)], 'cracked');
     if (room.rules.maxRounds && r >= room.rules.maxRounds) return finish(room, [], 'limit');
     return startRound(room, r + 1, now);
@@ -284,7 +308,7 @@ function resolveRound(room: Room, now: number) {
   const fallen: Side[] = [];
   for (const side of before) {
     const by = roundGuesses
-      .filter((g) => g.results.some((res) => res.target === side.id && res.fijas === len))
+      .filter((g) => truthOf(g).some((res) => res.target === side.id && res.fijas === len))
       .map((g) => g.sideId);
     if (by.length) {
       side.eliminatedRound = r;
@@ -309,8 +333,10 @@ function maybeAdvance(room: Room, now: number) {
     return;
   }
   if (room.phase === 'play') {
-    const submitted = new Set(room.guesses.filter((g) => g.round === room.round).map((g) => g.sideId));
-    if (activeSides(room).every((s) => submitted.has(s.id))) resolveRound(room, now);
+    const current = room.guesses.filter((g) => g.round === room.round);
+    const submitted = new Set(current.map((g) => g.sideId));
+    const answered = current.every((g) => !g.pending?.length);
+    if (answered && activeSides(room).every((s) => submitted.has(s.id))) resolveRound(room, now);
   }
 }
 
@@ -322,6 +348,7 @@ function settleDepartures(room: Room, now: number) {
     if (!present) {
       side.eliminatedRound = room.round;
       side.surrendered = true;
+      room.guesses.forEach((g) => g.pending?.includes(side.id) && autoAnswer(g, [side.id]));
     }
   }
   const alive = activeSides(room);
@@ -336,6 +363,7 @@ function settleDepartures(room: Room, now: number) {
 /** Cierra la ronda si se acabó el tiempo. Devuelve true si cambió algo. */
 export function tick(room: Room, now: number): boolean {
   if (room.phase === 'play' && room.roundDeadline && now >= room.roundDeadline) {
+    room.guesses.forEach((g) => g.pending?.length && autoAnswer(g, [...g.pending]));
     resolveRound(room, now);
     touch(room, now);
     return true;
@@ -464,21 +492,45 @@ export function applyAction(room: Room, pid: string, action: Action, now: number
       const value = String(action.value ?? '');
       const problem = codeProblem(value, room.rules);
       if (problem) throw new GameError(problem);
-      const results: GuessResult[] =
+      const targets = room.mode === 'race' ? [] : activeSides(room).filter((s) => s.id !== side.id);
+      const truth: GuessResult[] =
         room.mode === 'race'
           ? [{ target: 'app', ...score(room.appSecret!, value) }]
-          : activeSides(room)
-              .filter((s) => s.id !== side.id)
-              .map((s) => ({ target: s.id, ...score(s.secret!, value) }));
+          : targets.map((s) => ({ target: s.id, ...score(s.secret!, value) }));
+      // A mano, cada dueño de código responde; si el intento es su código exacto, la app lo da por descubierto.
+      const manual = isManual(room);
+      const pending = manual ? targets.filter((s) => s.secret !== value).map((s) => s.id) : [];
       room.guesses.push({
         id: `${room.round}-${side.id}`,
         round: room.round,
         sideId: side.id,
         by: pid,
         value,
-        results,
+        results: truth.filter((t) => !pending.includes(t.target)).map((t) => ({ ...t })),
+        truth,
+        pending,
         at: now,
       });
+      maybeAdvance(room, now);
+      break;
+    }
+    case 'answer': {
+      if (room.phase !== 'play') throw new GameError('Ahora no hay nada que responder.');
+      const side = sideOf(room, pid);
+      const g = room.guesses.find((x) => x.id === action.guessId);
+      if (!side || !g || !g.pending?.includes(side.id)) throw new GameError('Ese intento ya tiene respuesta.');
+      const len = room.rules.length;
+      const fijas = Math.round(Number(action.fijas));
+      const picas = Math.round(Number(action.picas));
+      if (!(fijas >= 0 && picas >= 0 && fijas + picas <= len)) {
+        throw new GameError(`Fijas y picas suman máximo ${len}.`);
+      }
+      const truth = truthOf(g).find((r) => r.target === side.id)!;
+      if (room.rules.check && (truth.fijas !== fijas || truth.picas !== picas)) {
+        throw new GameError('Revisa otra vez: esa no es la cuenta correcta.');
+      }
+      g.results.push({ target: side.id, fijas, picas });
+      g.pending = g.pending.filter((t) => t !== side.id);
       maybeAdvance(room, now);
       break;
     }
@@ -546,6 +598,10 @@ export interface GuessView {
   by: string;
   value?: string;
   results?: GuessResult[];
+  /** Quiénes faltan por responder (respuesta a mano). */
+  pending?: string[];
+  /** La cuenta correcta, solo al final (para ver quién se equivocó). */
+  truth?: GuessResult[];
   hidden?: boolean;
 }
 
@@ -599,13 +655,26 @@ export function viewFor(room: Room, pid: string, now: number): RoomView {
     }),
     guesses: room.guesses.map((g) => {
       const mine = g.sideId === mySide;
+      const base = { id: g.id, round: g.round, sideId: g.sideId, by: g.by };
+      const pending = g.pending?.length ? g.pending : undefined;
+      if (over) return { ...base, value: g.value, results: g.results, truth: truthOf(g) };
+      // A mano: quien debe responder ve el intento al momento, y conserva lo que respondió.
+      const targetsMe = Boolean(mySide && truthOf(g).some((r) => r.target === mySide));
+      if (!mine && targetsMe && isManual(room) && g.round === room.round && room.phase === 'play') {
+        return {
+          ...base,
+          value: g.value,
+          results: g.results.filter((r) => r.target === mySide),
+          pending: pending?.filter((t) => t === mySide),
+        };
+      }
       // Los intentos ajenos de la ronda en curso se revelan al cerrar la ronda.
-      if (!over && !mine && g.round === room.round && room.phase === 'play') {
-        return { id: g.id, round: g.round, sideId: g.sideId, by: g.by, hidden: true };
+      if (!mine && g.round === room.round && room.phase === 'play') {
+        return { ...base, hidden: true };
       }
       // En la carrera nadie ve los números de los demás hasta el final.
       const hideValue = room.mode === 'race' && !mine && !over;
-      return { id: g.id, round: g.round, sideId: g.sideId, by: g.by, value: hideValue ? undefined : g.value, results: g.results };
+      return { ...base, value: hideValue ? undefined : g.value, results: g.results, pending: mine ? pending : undefined };
     }),
     outcome: room.outcome,
     appSecret: over ? room.appSecret : undefined,
