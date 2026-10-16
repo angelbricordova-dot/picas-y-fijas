@@ -484,6 +484,7 @@ export function PlayScreen({ c, onLeave }: { c: Controller; onLeave: () => void 
           locked={out || iPlayed}
           lockedNote={lockedNote}
           notesScope={`${v.code}:${v.game}:${v.me}`}
+          lastValue={myGuesses[myGuesses.length - 1]?.value}
           submitLabel="Probar"
           onSubmit={(value) => c.send('guess', { value })}
         />

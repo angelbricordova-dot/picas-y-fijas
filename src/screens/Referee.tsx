@@ -325,6 +325,7 @@ export function RefereeScreen({ onBack }: { onBack: () => void }) {
             locked={tab === 'heard' && cracked}
             lockedNote={<span className="entry-locked-text">Partida terminada</span>}
             notesScope={tab === 'mine' ? `ref:${s.game}` : undefined}
+            lastValue={tab === 'mine' ? s.mine[s.mine.length - 1]?.value : undefined}
             submitLabel={tab === 'heard' ? 'Ver respuesta' : 'Siguiente'}
             onSubmit={tab === 'heard' ? answer : startMine}
           />
