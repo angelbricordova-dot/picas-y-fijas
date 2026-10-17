@@ -1,9 +1,9 @@
 // Datos que se guardan en este celular: perfil, credenciales de sala y preferencias.
-import type { AvatarId } from '../components/Avatar';
 
 export interface Profile {
   name: string;
-  avatar: AvatarId;
+  /** Personaje listo ("gorra") o armado ("~…"). */
+  avatar: string;
 }
 
 export interface Creds {

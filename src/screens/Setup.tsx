@@ -1,7 +1,8 @@
 import { ArrowLeft, CircleHelp, Gavel, History, Joystick, ScrollText } from 'lucide-react';
 import { useState } from 'react';
 import { MODES, type Mode, type Rules } from '../../shared/engine';
-import { Avatar, AVATAR_NAMES, AVATARS, type AvatarId } from '../components/Avatar';
+import { Avatar } from '../components/Avatar';
+import { AvatarStudio } from '../components/AvatarStudio';
 import { HowTo, Wordmark } from '../components/Brand';
 import { TableDiagram } from '../components/Tiles';
 import { Button, IconButton, Segmented, Sheet, Toggle, TopBar } from '../components/ui';
@@ -169,8 +170,8 @@ export function ProfileFields({
 }: {
   name: string;
   setName: (n: string) => void;
-  avatar: AvatarId;
-  setAvatar: (a: AvatarId) => void;
+  avatar: string;
+  setAvatar: (a: string) => void;
   color?: number;
 }) {
   return (
@@ -188,21 +189,8 @@ export function ProfileFields({
         />
       </label>
       <fieldset className="field">
-        <legend className="field-label">Elige tu personaje</legend>
-        <div className="avatar-grid">
-          {AVATARS.map((a) => (
-            <button
-              key={a}
-              type="button"
-              className={`avatar-pick ${a === avatar ? 'is-on' : ''}`}
-              aria-pressed={a === avatar}
-              aria-label={AVATAR_NAMES[a]}
-              onClick={() => setAvatar(a)}
-            >
-              <Avatar id={a} color={color} size={52} mood={a === avatar ? 'happy' : 'idle'} />
-            </button>
-          ))}
-        </div>
+        <legend className="field-label">Arma tu personaje</legend>
+        <AvatarStudio value={avatar} onChange={setAvatar} color={color} />
       </fieldset>
     </>
   );
@@ -224,7 +212,7 @@ export function ProfileScreen({
   error?: string | null;
 }) {
   const [name, setName] = useState(initial?.name ?? '');
-  const [avatar, setAvatar] = useState<AvatarId>(initial?.avatar ?? 'gorra');
+  const [avatar, setAvatar] = useState<string>(initial?.avatar ?? 'gorra');
   const ok = name.trim().length > 0;
   return (
     <div className="screen">
@@ -243,9 +231,6 @@ export function ProfileScreen({
           if (ok) onDone({ name: name.trim(), avatar });
         }}
       >
-        <div className="profile-preview" aria-hidden>
-          <Avatar id={avatar} color={0} size={112} mood={ok ? 'happy' : 'idle'} />
-        </div>
         <h2 className="screen-title">{invite ? 'Te invitaron a jugar' : '¿Quién juega?'}</h2>
         <ProfileFields name={name} setName={setName} avatar={avatar} setAvatar={setAvatar} />
         {error && (

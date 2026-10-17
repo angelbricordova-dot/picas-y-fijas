@@ -371,6 +371,12 @@ export function tick(room: Room, now: number): boolean {
   return false;
 }
 
+/** Personaje: uno listo ("gorra") o armado ("~" + capas en base 36). */
+export function cleanAvatar(avatar: unknown): string {
+  const a = String(avatar ?? '').replace(/[^a-z0-9~]/gi, '').slice(0, 32);
+  return a || 'gorra';
+}
+
 export function cleanName(name: unknown): string {
   const n = String(name ?? '')
     .replace(/[\u0000-\u001f<>]/g, '')
@@ -422,6 +428,7 @@ export function addPlayer(room: Room, p: Omit<Player, 'color' | 'team' | 'wins'>
   const player: Player = {
     ...p,
     name: cleanName(p.name),
+    avatar: cleanAvatar(p.avatar),
     color: freeColor(room),
     team: teamA <= present.length - teamA ? 0 : 1,
     wins: 0,
@@ -440,7 +447,7 @@ export function applyAction(room: Room, pid: string, action: Action, now: number
   switch (action.type) {
     case 'profile': {
       me.name = cleanName(action.name);
-      if (typeof action.avatar === 'string') me.avatar = action.avatar.slice(0, 24);
+      if (action.avatar !== undefined) me.avatar = cleanAvatar(action.avatar);
       break;
     }
     case 'team': {

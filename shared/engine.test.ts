@@ -237,3 +237,13 @@ test('a mano no aplica en la carrera', () => {
   applyAction(r, 'p0', { type: 'guess', value: '0123' }, T);
   assert.equal(r.guesses[0].results.length, 1);
 });
+
+test('personajes: se aceptan listos y armados, y se limpia lo raro', () => {
+  const r = room('duel', 1);
+  applyAction(r, 'p0', { type: 'profile', name: 'Ángel', avatar: '~0a1b2c3d4e5f' }, T);
+  assert.equal(r.players[0].avatar, '~0a1b2c3d4e5f');
+  applyAction(r, 'p0', { type: 'profile', name: 'Ángel', avatar: '<script>' }, T);
+  assert.equal(r.players[0].avatar, 'script');
+  applyAction(r, 'p0', { type: 'profile', name: 'Ángel', avatar: '' }, T);
+  assert.equal(r.players[0].avatar, 'gorra');
+});

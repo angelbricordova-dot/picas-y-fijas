@@ -1,7 +1,7 @@
 import { ArrowLeftRight, Check, Copy, Crown, LogOut, Pencil, Settings2, Share2, X } from 'lucide-react';
 import { useState, type CSSProperties } from 'react';
 import { MODES, startProblem, type Room, type RoomView } from '../../shared/engine';
-import { Avatar, type AvatarId } from '../components/Avatar';
+import { Avatar } from '../components/Avatar';
 import { Button, IconButton, Sheet, TopBar } from '../components/ui';
 import type { Controller } from '../lib/room';
 import { saveProfile } from '../lib/session';
@@ -38,10 +38,10 @@ export function Lobby({ c, onLeave }: { c: Controller; onLeave: () => void }) {
   const [settings, setSettings] = useState(false);
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(me.name);
-  const [avatar, setAvatar] = useState<AvatarId>(me.avatar as AvatarId);
+  const [avatar, setAvatar] = useState<string>(me.avatar);
   const openEditor = () => {
     setName(me.name);
-    setAvatar(me.avatar as AvatarId);
+    setAvatar(me.avatar);
     setEditing(true);
   };
   const saveMe = async () => {
@@ -219,9 +219,6 @@ export function Lobby({ c, onLeave }: { c: Controller; onLeave: () => void }) {
             if (name.trim()) void saveMe();
           }}
         >
-          <div className="profile-preview" aria-hidden>
-            <Avatar id={avatar} color={colorOf(v, me)} size={92} mood="happy" />
-          </div>
           <ProfileFields name={name} setName={setName} avatar={avatar} setAvatar={setAvatar} color={colorOf(v, me)} />
           <Button type="submit" disabled={!name.trim() || c.busy}>
             Guardar

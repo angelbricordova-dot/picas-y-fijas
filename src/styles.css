@@ -2787,3 +2787,182 @@ label.field .field-label {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ——— Estudio de personaje ——— */
+
+.studio {
+  display: grid;
+  gap: 12px;
+}
+
+.studio-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 14px 0 8px;
+  border-radius: 20px;
+  background: radial-gradient(ellipse 70% 80% at 50% 40%, var(--felt-hi), var(--felt-deep));
+}
+
+.studio-preview.is-rolling {
+  animation: roll 520ms var(--ease-spring);
+}
+
+@keyframes roll {
+  0% {
+    transform: rotate(0) scale(0.9);
+  }
+  35% {
+    transform: rotate(-14deg) scale(1.06);
+  }
+  70% {
+    transform: rotate(8deg) scale(0.98);
+  }
+}
+
+.studio-dice {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 13px;
+  background: var(--bone);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 3px 0 var(--bone-shade);
+  transition: transform 100ms var(--ease-out), box-shadow 100ms var(--ease-out);
+}
+
+.studio-dice:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--bone-shade);
+}
+
+.studio-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 calc(var(--gutter) * -1);
+  padding: 0 var(--gutter);
+}
+
+.studio-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.studio-tab {
+  flex: none;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--felt-deep);
+  color: var(--on-felt-2);
+  font-size: 14px;
+  font-weight: 650;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.studio-tab.is-on {
+  background: var(--bone);
+  color: var(--ink);
+}
+
+.studio-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.studio-group {
+  display: grid;
+  gap: 8px;
+}
+
+.studio-sub {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--on-felt-3);
+}
+
+.studio-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.studio-option {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 8px 2px 6px;
+  border-radius: 14px;
+  background: var(--felt-deep);
+  transition: transform 120ms var(--ease-out), box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.studio-option:active {
+  transform: scale(0.95);
+}
+
+.studio-option.is-on {
+  background: var(--felt-lo);
+  box-shadow: inset 0 0 0 2.5px var(--bone);
+}
+
+.studio-option-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--on-felt-2);
+  line-height: 1.15;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: inset 0 0 0 2px oklch(0 0 0 / 0.15), 0 2px 0 oklch(0 0 0 / 0.25);
+  transition: transform 120ms var(--ease-out), box-shadow 160ms ease;
+}
+
+.swatch--seat {
+  background: conic-gradient(var(--p0) 0 25%, var(--p1) 0 50%, var(--p2) 0 75%, var(--p3) 0);
+}
+
+.swatch.is-on {
+  box-shadow: 0 0 0 3px var(--felt), 0 0 0 5.5px var(--bone);
+  transform: scale(1.05);
+}
+
+.swatch:active {
+  transform: scale(0.92);
+}
+
+.sheet .studio-option,
+.sheet .studio-tab {
+  background: var(--felt-lo);
+}
+
+.sheet .studio-option.is-on {
+  background: var(--felt-deep);
+}
+
+.sheet .studio-tab.is-on {
+  background: var(--bone);
+}
