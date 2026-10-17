@@ -1345,6 +1345,17 @@ label.field .field-label {
   font-size: 13px;
 }
 
+.side-strip--many .side-chip:nth-last-child(4):first-child .side-chip-name,
+.side-strip--many .side-chip:nth-last-child(4):first-child ~ .side-chip .side-chip-name {
+  display: none;
+}
+
+.side-strip--many .side-chip:nth-last-child(4):first-child,
+.side-strip--many .side-chip:nth-last-child(4):first-child ~ .side-chip {
+  justify-content: center;
+  padding-left: 6px;
+}
+
 .side-strip--many .side-chip-state .dots i {
   width: 4px;
   height: 4px;

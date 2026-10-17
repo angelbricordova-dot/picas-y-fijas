@@ -1,0 +1,42 @@
+[
+  {
+    "texto": "¿Te acuerdas de Picas y Fijas? ¡Ahora en tu celular!",
+    "inicio": 0.12,
+    "fin": 3.41
+  },
+  {
+    "texto": "Cada uno escribe su código secreto.",
+    "inicio": 3.96,
+    "fin": 5.89
+  },
+  {
+    "texto": "Tú dices un número… y la app responde al instante: fijas, picas, sin trampas y sin errores.",
+    "inicio": 6.5,
+    "fin": 13.46
+  },
+  {
+    "texto": "Juega en duelo con tu pareja, todos contra todos, en parejas, o en carrera contra la app.",
+    "inicio": 14.33,
+    "fin": 19.74
+  },
+  {
+    "texto": "Arma tu ficha: sombrero, gafas, audífonos… o tira los dados y sorpréndete.",
+    "inicio": 20.23,
+    "fin": 26.3
+  },
+  {
+    "texto": "¿Juegan en persona? El modo árbitro cuenta por ti.",
+    "inicio": 27.11,
+    "fin": 31.03
+  },
+  {
+    "texto": "Comparte el código de la sala por WhatsApp… ¡y a jugar!",
+    "inicio": 31.58,
+    "fin": 35.12
+  },
+  {
+    "texto": "Picas y Fijas. Entra, crea tu sala y reta a tus amigos.",
+    "inicio": 35.9,
+    "fin": 40.53
+  }
+]
